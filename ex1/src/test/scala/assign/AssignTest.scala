@@ -1,8 +1,6 @@
 import org.scalatest._
-
 import common.Lang._
 import common.Runtime._
-
 import AssignLang._
 import AssignInstrs._
 import AssignCompiler._
@@ -30,6 +28,7 @@ class AssignTest extends FlatSpec with Matchers {
     )
   }
 
+
   "A program with multiple assignments" should "assign the correct values to each" in {
     val program = Program(List(
       AssignStmt("x", Lit(Num(42))),
@@ -54,6 +53,8 @@ class AssignTest extends FlatSpec with Matchers {
 
     val (instr,_) = AssignCompiler.compile(program)
 
+    //print(AssignRuntime.run(program))
+
     AssignRuntime.run(program) shouldBe equivalentTo(instr,
 //     pc |   x
       (0, Map(0 -> null)),
@@ -63,7 +64,24 @@ class AssignTest extends FlatSpec with Matchers {
   }
 
   // TODO: Add your own tests here
+  "Task 1" should "print conditional traces" in {
+    val program = Program(List(
+      IfStmt(
+        Lit(Bool(true)),
+        List(
+          AssignStmt("x", Lit(Num(42)))
+        ),
+        List(
+          AssignStmt("x", Lit(Num(66)))
+        )
+      )
+    ))
 
+    val trace = AssignRuntime.run(program)
+    print(trace)
+
+    1 shouldBe 1
+  }
 
   def program(statements: Statement*) = Program(statements.toList)
 

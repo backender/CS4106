@@ -45,6 +45,21 @@ object AssignRuntime {
       }
 
       // TODO: Handle the case of ifjump's
+      case IfStmtInstr(expr, (ifInstrs, ifHs), (elseInstrs, elseHs)) => {
+        print("ifs " + ifInstrs)
+        //print("elses " + elseInstrs)
+        pc += 1
+        if (ensureBool(evalExpr(heap, expr))) {
+          heap = heap.alloc(ifHs)._1
+          step(State(ifInstrs, 0, heap))
+
+
+        } else {
+          heap = heap.alloc(elseHs)._1
+          step(State(elseInstrs, 0, heap))
+        }
+      }
+
     }
 
     state.copy(

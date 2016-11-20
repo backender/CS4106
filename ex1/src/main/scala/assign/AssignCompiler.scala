@@ -32,6 +32,11 @@ object AssignCompiler {
         }
 
         // TODO: Handle the case of IfStmt's
+        case IfStmt(expression, ifBranch, elseBranch) => {
+          val ifComp = compile(Program(ifBranch))
+          val elseComp = compile(Program(elseBranch))
+          instructions += IfStmtInstr(compileExpr(environment, expression), ifComp, elseComp)
+        }
       }
     }
 

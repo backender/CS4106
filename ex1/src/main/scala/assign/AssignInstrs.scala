@@ -9,4 +9,5 @@ object AssignInstrs {
   case class AssignInstr(location: Loc, value: Expression[Loc]) extends Instruction
 
   // TODO: Add an instruction for ifjump
+  case class IfStmtInstr(value: Expression[Loc], ifInstrs: (List[Instruction], Int), elseInstrs: (List[Instruction], Int)) extends Instruction
 }
