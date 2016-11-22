@@ -64,23 +64,86 @@ class AssignTest extends FlatSpec with Matchers {
   }
 
   // TODO: Add your own tests here
-  "Task 1" should "print conditional traces" in {
+ "Conditional true statement" should "trace value from first statement" in {
+   val program = Program(List(
+     IfStmt(
+       Lit(Bool(true)),
+       List(
+         AssignStmt("x", Lit(Num(42)))
+       ),
+       List(
+         AssignStmt("x", Lit(Num(666)))
+       )
+     )
+   ))
+
+   val (instr,_) = AssignCompiler.compile(program)
+
+   AssignRuntime.run(program) shouldBe equivalentTo(instr,
+     //     pc |   x
+     (0, Map(0 -> null)),
+     (1, Map(0 -> null)),
+     (2, Map(0 -> NumValue(42)))
+   )
+ }
+
+  "Conditional false statement" should "trace value from second statement" in {
     val program = Program(List(
       IfStmt(
-        Lit(Bool(true)),
+        Lit(Bool(false)),
         List(
           AssignStmt("x", Lit(Num(42)))
         ),
         List(
-          AssignStmt("x", Lit(Num(66)))
+          AssignStmt("x", Lit(Num(666)))
         )
       )
     ))
 
-    val trace = AssignRuntime.run(program)
-    print(trace)
+    val (instr,_) = AssignCompiler.compile(program)
 
-    1 shouldBe 1
+    //print(AssignRuntime.run(program))
+
+    AssignRuntime.run(program) shouldBe equivalentTo(instr,
+      //     pc |   x
+      (0, Map(0 -> null)),
+      (1, Map(0 -> null)),
+      (2, Map(0 -> NumValue(666)))
+    )
+  }
+
+  "Nested conditional statements" should "trace correct value" in {
+    val program = Program(List(
+      IfStmt(
+        Lit(Bool(true)),
+        List(
+          IfStmt(
+            Lit(Bool(false)),
+            List(
+              AssignStmt("x", Lit(Num(42)))
+            ),
+            List(
+              AssignStmt("x", Lit(Num(666)))
+            )
+          )
+        ),
+        List(
+          AssignStmt("x", Lit(Num(666)))
+        )
+      )
+    ))
+
+    val (instr,_) = AssignCompiler.compile(program)
+
+    //print(AssignRuntime.run(program))
+
+    AssignRuntime.run(program) shouldBe equivalentTo(instr,
+      //     pc |   x
+      (0, Map(0 -> null)),
+      (1, Map(0 -> null)),
+      (2, Map(0 -> null)),
+      (3, Map(0 -> NumValue(666)))
+    )
   }
 
   def program(statements: Statement*) = Program(statements.toList)

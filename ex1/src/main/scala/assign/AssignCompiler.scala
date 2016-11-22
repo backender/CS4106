@@ -9,38 +9,36 @@ import scala.collection.mutable
 object AssignCompiler {
 
   type Environment = Map[Variable, Loc]
+  var environment : Environment = Map()
 
   def compile(program: Program) : (List[Instruction], Int) = {
+    environment = Map()
+    (program.statements.flatMap(compileStatement),environment.size)
+  }
 
-    var instructions : mutable.MutableList[Instruction] = mutable.MutableList()
-    var environment : Environment = Map()
+  def compileStatement(statement: Statement): List[Instruction] = {
+    statement match {
+      case AssignStmt(ident, expr) => {
 
-    for (statement <- program.statements) {
-      statement match {
-        case AssignStmt(ident, expr) => {
-
-          var index = 0
-          environment.get(ident) match {
-            case Some(i) => index = i
-            case None => {
-              index = environment.size
-              environment += (ident -> index)
-            }
+        var index = 0
+        environment.get(ident) match {
+          case Some(i) => index = i
+          case None => {
+            index = environment.size
+            environment += (ident -> index)
           }
-
-          instructions += AssignInstr(index, compileExpr(environment, expr))
         }
 
-        // TODO: Handle the case of IfStmt's
-        case IfStmt(expression, ifBranch, elseBranch) => {
-          val ifComp = compile(Program(ifBranch))
-          val elseComp = compile(Program(elseBranch))
-          instructions += IfStmtInstr(compileExpr(environment, expression), ifComp, elseComp)
-        }
+        List(AssignInstr(index, compileExpr(environment, expr)))
+      }
+
+      // TODO: Handle the case of IfStmt's
+      case IfStmt(expression, ifBranch, elseBranch) => {
+        val ifComp = ifBranch.map(compileStatement)
+        val elseComp = elseBranch.map(compileStatement)
+        List(IfStmtInstr(compileExpr(environment, expression), ifComp.flatten, elseComp.flatten))
       }
     }
-
-    return (instructions.toList,environment.size)
   }
 
   def compileExpr(env: Environment, expr: Expression[Variable]) : Expression[Loc] =

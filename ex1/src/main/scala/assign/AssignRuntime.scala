@@ -37,6 +37,7 @@ object AssignRuntime {
   def step(state: State) : State = {
     var heap = state.heap
     var pc = state.programCounter
+    var ifElseInstr : List[Instruction] = List()
 
     state.program(state.programCounter) match {
       case AssignInstr(res, expr) => {
@@ -45,24 +46,19 @@ object AssignRuntime {
       }
 
       // TODO: Handle the case of ifjump's
-      case IfStmtInstr(expr, (ifInstrs, ifHs), (elseInstrs, elseHs)) => {
-        print("ifs " + ifInstrs)
-        //print("elses " + elseInstrs)
+      case IfStmtInstr(expr, ifInstrs, elseInstrs) => {
         pc += 1
         if (ensureBool(evalExpr(heap, expr))) {
-          heap = heap.alloc(ifHs)._1
-          step(State(ifInstrs, 0, heap))
-
-
+          ifElseInstr = ifInstrs
         } else {
-          heap = heap.alloc(elseHs)._1
-          step(State(elseInstrs, 0, heap))
+          ifElseInstr = elseInstrs
         }
       }
 
     }
 
     state.copy(
+      program = state.program ++ ifElseInstr,
       programCounter = pc,
       heap = heap
     )
