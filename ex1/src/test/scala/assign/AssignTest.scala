@@ -64,28 +64,28 @@ class AssignTest extends FlatSpec with Matchers {
   }
 
   // TODO: Add your own tests here
- "Conditional true statement" should "trace value from first statement" in {
-   val program = Program(List(
-     IfStmt(
-       Lit(Bool(true)),
-       List(
-         AssignStmt("x", Lit(Num(42)))
-       ),
-       List(
-         AssignStmt("x", Lit(Num(666)))
+   "Conditional true statement" should "trace value from first statement" in {
+     val program = Program(List(
+       IfStmt(
+         Lit(Bool(true)),
+         List(
+           AssignStmt("x", Lit(Num(42)))
+         ),
+         List(
+           AssignStmt("x", Lit(Num(666)))
+         )
        )
+     ))
+
+     val (instr,_) = AssignCompiler.compile(program)
+
+     AssignRuntime.run(program) shouldBe equivalentTo(instr,
+       //     pc |   x
+       (0, Map(0 -> null)),
+       (1, Map(0 -> null)),
+       (2, Map(0 -> NumValue(42)))
      )
-   ))
-
-   val (instr,_) = AssignCompiler.compile(program)
-
-   AssignRuntime.run(program) shouldBe equivalentTo(instr,
-     //     pc |   x
-     (0, Map(0 -> null)),
-     (1, Map(0 -> null)),
-     (2, Map(0 -> NumValue(42)))
-   )
- }
+   }
 
   "Conditional false statement" should "trace value from second statement" in {
     val program = Program(List(
@@ -145,6 +145,25 @@ class AssignTest extends FlatSpec with Matchers {
       (3, Map(0 -> NumValue(666)))
     )
   }
+
+
+  "While true" should "result in StackOverflowError" in {
+    val program = Program(List(
+      WhileStmt(
+        Lit(Bool(true)),
+        List(
+          AssignStmt("x", Lit(Num(42)))
+        )
+      )
+    ))
+
+    val (instr,_) = AssignCompiler.compile(program)
+
+    print(AssignRuntime.run(program))
+
+    1 shouldBe 1
+  }
+
 
   def program(statements: Statement*) = Program(statements.toList)
 

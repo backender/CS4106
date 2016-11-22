@@ -38,6 +38,12 @@ object AssignCompiler {
         val elseComp = elseBranch.map(compileStatement)
         List(IfStmtInstr(compileExpr(environment, expression), ifComp.flatten, elseComp.flatten))
       }
+
+      case WhileStmt(expression, branch) => {
+        val branchComp = branch.map(compileStatement)
+        List(WhileStmtInstr(compileExpr(environment, expression), branchComp.flatten))
+      }
+
     }
   }
 

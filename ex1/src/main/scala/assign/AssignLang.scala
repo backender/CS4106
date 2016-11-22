@@ -11,6 +11,8 @@ object AssignLang {
   // Example: if(false) { x := x + 1 } { x := 0 }
   case class IfStmt(expression: Expression[Variable], ifBranch: List[Statement], elseBranch: List[Statement]) extends Statement
 
+  case class WhileStmt(expression: Expression[Variable], branch: List[Statement]) extends Statement
+
   // Expressions
   sealed abstract class Expression[Identifier]
   // Variables

@@ -55,6 +55,14 @@ object AssignRuntime {
         }
       }
 
+      case WhileStmtInstr(expr, branchInstr) => {
+        if (ensureBool(evalExpr(heap, expr))) {
+          ifElseInstr = branchInstr
+        } else {
+          pc += 1
+        }
+      }
+
     }
 
     state.copy(
