@@ -64,6 +64,39 @@ class AssignTest extends FlatSpec with Matchers {
   }
 
   // TODO: Add your own tests here
+
+  "A program with a single assignment" should "assign the correct boolean value" in {
+    val program = Program(List(
+      AssignStmt("x", Lit(Bool(false)))
+    ))
+
+    val (instr,_) = AssignCompiler.compile(program)
+
+    AssignRuntime.run(program) shouldBe equivalentTo(instr,
+      //     pc |   x
+      (0, Map(0 -> null)),
+      (1, Map(0 -> BoolValue(false)))
+    )
+  }
+
+  "A program with multiple assignments" should "overwrite the value also with another type" in {
+    val program = Program(List(
+      AssignStmt("x", Lit(Num(42))),
+      AssignStmt("x", Lit(Bool(true)))
+    ))
+
+    val (instr,_) = AssignCompiler.compile(program)
+
+    //print(AssignRuntime.run(program))
+
+    AssignRuntime.run(program) shouldBe equivalentTo(instr,
+      //     pc |   x
+      (0, Map(0 -> null)),
+      (1, Map(0 -> NumValue(42))),
+      (2, Map(0 -> BoolValue(true)))
+    )
+  }
+
    "Conditional true statement" should "trace value from first statement" in {
      val program = Program(List(
        IfStmt(
@@ -78,6 +111,8 @@ class AssignTest extends FlatSpec with Matchers {
      ))
 
      val (instr,_) = AssignCompiler.compile(program)
+
+     //printTrace(AssignRuntime.run(program))
 
      AssignRuntime.run(program) shouldBe equivalentTo(instr,
        //     pc |   x
@@ -102,7 +137,7 @@ class AssignTest extends FlatSpec with Matchers {
 
     val (instr,_) = AssignCompiler.compile(program)
 
-    //print(AssignRuntime.run(program))
+    //printTrace(AssignRuntime.run(program))
 
     AssignRuntime.run(program) shouldBe equivalentTo(instr,
       //     pc |   x
@@ -135,7 +170,7 @@ class AssignTest extends FlatSpec with Matchers {
 
     val (instr,_) = AssignCompiler.compile(program)
 
-    //print(AssignRuntime.run(program))
+    printTrace(AssignRuntime.run(program))
 
     AssignRuntime.run(program) shouldBe equivalentTo(instr,
       //     pc |   x
@@ -178,7 +213,7 @@ class AssignTest extends FlatSpec with Matchers {
 
     val (instr,_) = AssignCompiler.compile(program)
 
-    //print(AssignRuntime.run(program))
+    //printTrace(AssignRuntime.run(program))
 
     AssignRuntime.run(program) shouldBe equivalentTo(instr,
       //     pc |   x
@@ -200,7 +235,7 @@ class AssignTest extends FlatSpec with Matchers {
 
     val (instr,_) = AssignCompiler.compile(program)
 
-    //print(AssignRuntime.run(program))
+    //printTrace(AssignRuntime.run(program))
 
     AssignRuntime.run(program) shouldBe equivalentTo(instr,
       //     pc |   x
@@ -225,7 +260,7 @@ class AssignTest extends FlatSpec with Matchers {
 
     val (instr,_) = AssignCompiler.compile(program)
 
-    //print(AssignRuntime.run(program))
+    //printTrace(AssignRuntime.run(program))
 
     AssignRuntime.run(program) shouldBe equivalentTo(instr,
       //     pc |   x
