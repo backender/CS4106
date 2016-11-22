@@ -159,11 +159,85 @@ class AssignTest extends FlatSpec with Matchers {
 
     val (instr,_) = AssignCompiler.compile(program)
 
-    print(AssignRuntime.run(program))
+    //print(AssignRuntime.run(program))
 
-    1 shouldBe 1
+    assertThrows[StackOverflowError] {
+      AssignRuntime.run(program)
+    }
   }
 
+  "While false" should "result neglect everything within statement" in {
+    val program = Program(List(
+      WhileStmt(
+        Lit(Bool(false)),
+        List(
+          AssignStmt("x", Lit(Num(42)))
+        )
+      )
+    ))
+
+    val (instr,_) = AssignCompiler.compile(program)
+
+    //print(AssignRuntime.run(program))
+
+    AssignRuntime.run(program) shouldBe equivalentTo(instr,
+      //     pc |   x
+      (0, Map(0 -> null)),
+      (2, Map(0 -> null))
+    )
+  }
+
+  "While assignment" should "execute once" in {
+    val program = Program(List(
+      AssignStmt("x", Lit(Num(0))),
+      WhileStmt(
+        Not(Eq(Var("x"), Lit(Num(1)))),
+        List(
+          AssignStmt("x", Lit(Num(1)))
+        )
+      )
+    ))
+
+    val (instr,_) = AssignCompiler.compile(program)
+
+    //print(AssignRuntime.run(program))
+
+    AssignRuntime.run(program) shouldBe equivalentTo(instr,
+      //     pc |   x
+      (0, Map(0 -> null)),
+      (1, Map(0 -> NumValue(0))),
+      (2, Map(0 -> NumValue(0))),
+      (3, Map(0 -> NumValue(1))),
+      (5, Map(0 -> NumValue(1))) // pc jumps by 2 after last loop, see AssignRuntime:63
+    )
+  }
+
+  "While assignments" should "execute twice" in {
+    val program = Program(List(
+      AssignStmt("x", Lit(Num(0))),
+      WhileStmt(
+        Not(Eq(Var("x"), Lit(Num(2)))),
+        List(
+          AssignStmt("x", Add(Var("x"), Lit(Num(1))))
+        )
+      )
+    ))
+
+    val (instr,_) = AssignCompiler.compile(program)
+
+    //print(AssignRuntime.run(program))
+
+    AssignRuntime.run(program) shouldBe equivalentTo(instr,
+      //     pc |   x
+      (0, Map(0 -> null)),
+      (1, Map(0 -> NumValue(0))),
+      (2, Map(0 -> NumValue(0))),
+      (3, Map(0 -> NumValue(1))),
+      (4, Map(0 -> NumValue(1))),
+      (5, Map(0 -> NumValue(2))),
+      (7, Map(0 -> NumValue(2))) // pc jumps by 2 after last loop, see AssignRuntime:63
+    )
+  }
 
   def program(statements: Statement*) = Program(statements.toList)
 

@@ -37,7 +37,7 @@ object AssignRuntime {
   def step(state: State) : State = {
     var heap = state.heap
     var pc = state.programCounter
-    var ifElseInstr : List[Instruction] = List()
+    var addInstr : List[Instruction] = List()
 
     state.program(state.programCounter) match {
       case AssignInstr(res, expr) => {
@@ -49,24 +49,25 @@ object AssignRuntime {
       case IfStmtInstr(expr, ifInstrs, elseInstrs) => {
         pc += 1
         if (ensureBool(evalExpr(heap, expr))) {
-          ifElseInstr = ifInstrs
+          addInstr = ifInstrs
         } else {
-          ifElseInstr = elseInstrs
+          addInstr = elseInstrs
         }
       }
 
       case WhileStmtInstr(expr, branchInstr) => {
         if (ensureBool(evalExpr(heap, expr))) {
-          ifElseInstr = branchInstr
-        } else {
+          addInstr = branchInstr ++ List(WhileStmtInstr(expr, branchInstr))
           pc += 1
+        } else {
+          pc += 1 + branchInstr.length
         }
       }
 
     }
 
     state.copy(
-      program = state.program ++ ifElseInstr,
+      program = state.program ++ addInstr, //TODO: this causes troubles with Assigntest.equivalentTo(). Please elaborate how I could have prevented this...?!
       programCounter = pc,
       heap = heap
     )
