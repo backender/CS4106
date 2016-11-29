@@ -119,7 +119,7 @@ class ArrayTest extends FlatSpec with Matchers {
       AssignArrayStmt("x", Lit(Num(1)), Lit(Num(42))),
       DeleteArrayStmt("x"),
       NewArrayStmt("y", Lit(Num(2))),
-      //AssignArrayStmt("y", Lit(Num(1)), Lit(Num(42))),
+      AssignArrayStmt("y", Lit(Num(1)), Lit(Num(42))),
       DeleteArrayStmt("x")
     )
 
@@ -134,7 +134,7 @@ class ArrayTest extends FlatSpec with Matchers {
     (2, Vector(NumValue(2), null,        NumValue(2), null,  NumValue(42))),
     (3, Vector(NumValue(2), null)),
       //         x          | y          | ylen       | y[0] | y[1]
-    (4, Vector(NumValue(2), NumValue(2), NumValue(2), null,  null        )),
+    (4, Vector(NumValue(2), NumValue(2), NumValue(2), null,  NumValue(42))),
     (5, Vector(NumValue(2), NumValue(2), NumValue(2), null,  NumValue(42))),
     (6, Vector(NumValue(2), NumValue(2)))
     )
