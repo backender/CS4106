@@ -68,7 +68,6 @@ class ArrayTest extends FlatSpec with Matchers {
   }
 
   // TODO: For task 2, add three tests here
-
   it should "leak Memory if dynamically allocated memory is not referred to by any variable" in {
     val compiler = new ArrayCompiler()
     val prog: Program = program(
@@ -120,6 +119,7 @@ class ArrayTest extends FlatSpec with Matchers {
       DeleteArrayStmt("x"),
       NewArrayStmt("y", Lit(Num(2))),
       AssignArrayStmt("y", Lit(Num(1)), Lit(Num(42))),
+      // free values of y through x
       DeleteArrayStmt("x")
     )
 
@@ -155,10 +155,50 @@ class ArrayTest extends FlatSpec with Matchers {
     val (instrs, _) = compiler.compile(prog)
 
     // TODO: Fill in your trace
-    ArrayRuntime.run(compiler,prog) shouldBe theTrace(instrs)
+    ArrayRuntime.run(compiler,prog) shouldBe theTrace(instrs,
+      //         x          | y          | xlen       | x[0]   | x[1]        | x[2]
+      (0, Vector(null,        null)),
+      (1, Vector(NumValue(2), null,        NumValue(3), null,  null,         null)),
+      (2, Vector(NumValue(2), null,        NumValue(3), null,  NumValue(42), null)),
+      (3, Vector(NumValue(2), null)),
+      (4, Vector(NumValue(2), NumValue(2), NumValue(3), null,  NumValue(42), null)),
+      (5, Vector(NumValue(2), NumValue(2), NumValue(3), null,  NumValue(43), null))
+    )
   }
 
   // TODO: For task 4, add 2 tests here starting with
+
+  it should "prevent accessing freed memory" in {
+    val compiler = new SafeArrayCompiler()
+    val prog: Program = program(
+      NewArrayStmt("x", Lit(Num(2))),
+      AssignArrayStmt("x", Lit(Num(1)), Lit(Num(42))),
+      DeleteArrayStmt("x"),
+      // Let's try to fetch "freed" memory resource by simulating y as the previous x
+      NewArrayStmt("y", Lit(Num(2))),
+      ReadArrayStmt("x", "y", Lit(Num(1)))
+    )
+
+    an [RuntimeException] should be thrownBy ArrayRuntime.run(compiler,prog)
+  }
+
+
+  it should "prevent double frees" in {
+    val compiler = new SafeArrayCompiler()
+    val prog: Program = program(
+      NewArrayStmt("x", Lit(Num(2))),
+      AssignArrayStmt("x", Lit(Num(1)), Lit(Num(42))),
+      DeleteArrayStmt("x"),
+      NewArrayStmt("y", Lit(Num(2))),
+      AssignArrayStmt("y", Lit(Num(1)), Lit(Num(42))),
+      // free values of y through x
+      DeleteArrayStmt("x")
+    )
+    //val trace = ArrayRuntime.run(compiler,prog)
+    //println(trace)
+    an [RuntimeException] should be thrownBy ArrayRuntime.run(compiler,prog)
+  }
+
 
   "The safe array runtime" should "not reject a valid program" in {
     val compiler = new ArrayCompiler()
@@ -172,11 +212,48 @@ class ArrayTest extends FlatSpec with Matchers {
 
     val (instrs, _) = compiler.compile(prog)
 
+
     // TODO: Fill in your trace
-    SafeArrayRuntime.run(compiler,prog) shouldBe theSafeTrace(instrs)
+    SafeArrayRuntime.run(compiler,prog) shouldBe theSafeTrace(instrs,
+      (0, Vector(null, null), Set()),
+      (1, Vector(NumValue(2), null,        NumValue(3), null,  null,         null), Set()),
+      (2, Vector(NumValue(2), null,        NumValue(3), null,  NumValue(42), null), Set()),
+      (3, Vector(NumValue(2), null), Set()),
+      (4, Vector(NumValue(2), NumValue(2), NumValue(3), null,  NumValue(42), null), Set()),
+      (5, Vector(NumValue(2), NumValue(2), NumValue(3), null,  NumValue(43), null), Set()))
   }
 
   // TODO: For task 6, add 2 tests here
+  it should "prevent accessing freed memory" in {
+    val compiler = new ArrayCompiler()
+    val prog: Program = program(
+      NewArrayStmt("x", Lit(Num(2))),
+      AssignArrayStmt("x", Lit(Num(1)), Lit(Num(42))),
+      DeleteArrayStmt("x"),
+      // Let's try to fetch "freed" memory resource by simulating y as the previous x
+      NewArrayStmt("y", Lit(Num(2))),
+      ReadArrayStmt("x", "y", Lit(Num(1)))
+    )
+
+    an [RuntimeException] should be thrownBy SafeArrayRuntime.run(compiler,prog)
+  }
+
+  it should "prevent double frees" in {
+    val compiler = new ArrayCompiler()
+    val prog: Program = program(
+      NewArrayStmt("x", Lit(Num(2))),
+      AssignArrayStmt("x", Lit(Num(1)), Lit(Num(42))),
+      DeleteArrayStmt("x"),
+      NewArrayStmt("y", Lit(Num(2))),
+      AssignArrayStmt("y", Lit(Num(1)), Lit(Num(42))),
+      // free values of y through x
+      DeleteArrayStmt("x")
+    )
+    //val trace = ArrayRuntime.run(compiler,prog)
+    //println(trace)
+    an [RuntimeException] should be thrownBy SafeArrayRuntime.run(compiler,prog)
+  }
+
 
   def theTrace(instr: List[Instruction], l: (Int, Vector[Value])*): List[ArrayRuntime.State] = {
     l.map { case (pc, mem) => ArrayRuntime.State(instr, pc, Heap(mem,List())) }.toList

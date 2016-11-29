@@ -9,9 +9,9 @@ of arrays.
 
     Prog ::= Stmt*
     Stmt ::= Identifier := Expr | while Expr Stmt*
-      | Identifier := arnew Expr 
+      | Identifier := arnew Expr
       | Identifier := arread Identifier Expr
-      | arwrite Identifier Expr Expr 
+      | arwrite Identifier Expr Expr
       | delete Identifier
     Expr ::= Identifier | Literal | Expr {+,-,/,*,&&,||,=} Expr | {-,!} Expr
       | arlen Identifier
@@ -47,12 +47,36 @@ problems associated with the memory model:
 Task 1: Provide an example program in the Array language for each
 problem.
 
+    Memory Leaks
+    ----------------------
+    a := new Array[2]
+    a[1] := 42
+    a := 666
+
+    Accessing freed memory
+    ----------------------
+    a := new Array[2]
+    a[1] := 42
+    delete a
+    b = a[1]
+
+    Double frees
+    ----------------------
+    a := new Array[2]
+    a[1] := 42
+    delete a
+    b := new Array[2]
+    delete a
+
 We prepared again an implementation of the Array language that is
 available in the attachments of this exercise.
 
 Task 2: Study the concrete implementation of `alloc` and `free` in
 `common.Runtime`. Add 3 tests to `ArrayTest` for the programs of Task
 1 to confirm that they actually have these problems.
+
+    Solution
+    ArrayTest:71-124
 
 # Dynamic analysis by instrumenting the compiler
 
@@ -67,6 +91,9 @@ Task 3: Modify the `compileStatement` method in `SafeArrayCompiler` to
 prevent the problems of accessing freed memory and double frees. Use
 `abort` to exit the execution unsafe programs.
 
+    Solution
+    SafeArrayCompiler:65-...
+
 Task 4: Add 2 tests for the same programs as in task 1 compiled with
 the `SafeArrayCompiler` and run with `ArrayRuntime`. Ensure that the
 execution of these programs actually aborts. Use the ScalaTest matcher
@@ -75,6 +102,8 @@ expected with an exception.
 
 Example: `an [RuntimeException] should be thrownBy ArrayRuntime.run(compiler,prog)`
 
+    Solution
+    ArrayTest:171-200
 
 # Dynamic analysis by monitoring execution traces
 
@@ -88,5 +117,11 @@ the problem of accessing freed memory and double frees. Make use of
 the set of deleted array locations to track if an array has been
 deleted or is still valid.
 
+    Solution
+    SafeArrayRuntime:...
+
 Task 6: Add 2 tests for the same programs as in task 1 compiled with
 the `ArrayCompiler` and run with `SafeArrayRuntime`.
+
+    Solution
+    ArrayTest:227-255

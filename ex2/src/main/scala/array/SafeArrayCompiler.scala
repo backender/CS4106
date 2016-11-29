@@ -64,7 +64,13 @@ class SafeArrayCompiler extends ArrayCompiler {
       // delete(a)
       case DeleteArrayStmt(a) => {
         val arrLoc = lookupFail(a)
-        instructions += DeleteArrayInstr(arrLoc)
+        env.get(a) match {
+          case Some(-1) =>
+            instructions += AbortInstr("Unable to free more than once.")
+          case _ =>
+            instructions += DeleteArrayInstr(arrLoc)
+            env += (a -> -1) // mark array location as free
+        }
         pos += 1
       }
 

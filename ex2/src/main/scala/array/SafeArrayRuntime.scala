@@ -44,6 +44,7 @@ object SafeArrayRuntime {
   def step(state: State) : State = {
     var pc = state.programCounter
     var heap = state.heap
+    var deleted = state.deleted
 
     state.program(pc) match {
       case AssignInstr(res, expr) => {
@@ -63,11 +64,17 @@ object SafeArrayRuntime {
         val idx = ensureNum(evalExpr(heap, i)) + 1
         pc += 1
         heap = heap.store(arrayStart + idx, evalExpr(heap, e))
+
+        // Make sure to remove the assigned location from deleted set
+        deleted = deleted - (arrayStart + idx)
       }
 
       case ReadArrayInstr(x, a, i) => {
         val arrayStart = ensureNum(heap.fetch(a).getOrElse(sys.error("Array at index %d has not been set yet".format(a))))
         val idx = ensureNum(evalExpr(heap, i)) + 1
+        if (deleted.contains(arrayStart + idx)) {
+          throw new RuntimeException("Unable to access freed memory.")
+        }
         pc += 1
         heap = heap.store(x, heap.fetch(arrayStart + idx)
           .getOrElse(sys.error("Array index %d of array %d has not been set".format(idx, a))))
@@ -88,6 +95,12 @@ object SafeArrayRuntime {
           .getOrElse(sys.error("Array index %d of array %d has not been set".format(0, a))))
         pc += 1
         heap = heap.free(arrayStart, arrayStart + arrayLen)
+
+        val toBeFreed = List.range(arrayStart, arrayStart + arrayLen+1)
+        if (toBeFreed.exists(deleted.contains)) {
+          throw new RuntimeException("Unable to free more than once.")
+        }
+        deleted = deleted ++ toBeFreed
       }
 
       case AbortInstr(msg) =>
@@ -96,7 +109,8 @@ object SafeArrayRuntime {
 
     state.copy(
       programCounter = pc,
-      heap = heap
+      heap = heap,
+      deleted = deleted
     )
   }
 
