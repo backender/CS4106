@@ -1,0 +1,41 @@
+            0       1   2
+setpassword(userid,pw,newpw) {
+     3
+     i = len newpw -1   // 0:  AssignInstr(3,Sub(ArrayLength(2),Lit(Num(1)))),
+
+     while (i >= 0) {   // 1:  JumpIfInstr(6,Not(Or(Gt(Var(3),Lit(Num(0))),Eq(Var(3),Lit(Num(0)))))),
+
+       4         3
+       x = newpw[i]     // 2:  ReadArrayInstr(4,2,Var(3)),
+
+       1  3    4
+       pw[i] = x        // 3:  AssignArrayInstr(1,Var(3),Var(4)),
+
+       3   3
+       i = i - 1        // 4:  AssignInstr(3,Sub(Var(3),Lit(Num(1)))),
+
+                        // 5:  JumpIfInstr(1,Lit(Bool(true))),
+     }
+                        // 6:  ReturnInstr(Var(1)),
+
+}
+
+                    0
+grantAdminAccess(userid) {
+ ...
+ return userid          // 7:  ReturnInstr(Var(0)),
+}
+
+newpw = new Array[8]         // 8:  NewArrayInstr(0,Lit(Num(8))),
+// newpw is entered by the user
+newpw[0] = 18                // 9:  AssignArrayInstr(0, Lit(Num(0)), Lit(Num(18))),
+newpw[1] = 0                 // 10: AssignArrayInstr(0, Lit(Num(1)), Lit(Num(0))),
+newpw[2] = 0                 // 11: AssignArrayInstr(0, Lit(Num(2)), Lit(Num(0))),
+newpw[3] = 0                 // 12: AssignArrayInstr(0, Lit(Num(3)), Lit(Num(0))),
+newpw[4] = 14                // 13: AssignArrayInstr(0, Lit(Num(4)), Lit(Num(14))),
+newpw[6] = 6                 // 14: AssignArrayInstr(0, Lit(Num(6)), Lit(Num(6))),
+newpw[7] = 8                 // 15: AssignArrayInstr(0, Lit(Num(7)), Lit(Num(8))),
+pw = new Array[6]            // 16: NewArrayInstr(1,Lit(Num(6))),
+setpassword(14,pw,newpw)     // 17: CallInstr(2,0,5,List(Lit(Num(14)), Var(1), Var(0))),
+grantAdminAccess(1)          // 18: CallInstr(2,7,1,List(Lit(Num(1))))
+
