@@ -36,7 +36,7 @@ object SafeFunRuntime {
   def run(prog: Program): Trace = {
     val (instrs, entryPoint, initFrameSize) = compile(prog)
     val (heap, idx) = Heap.empty.alloc(initFrameSize)
-    trace(State(instrs, Registers(entryPoint, idx, 0, 0), heap, Set()))
+    trace(State(instrs, Registers(entryPoint, idx, 0, 0), heap, Set(0,1,2,3))) // NOTE: Add first registers to the protected set
   }
 
   def printTrace(trace: Trace) = {
@@ -73,6 +73,9 @@ object SafeFunRuntime {
         val arrayStart = ensureNum(heap.fetch(regs.framePointer + x)
           .getOrElse(sys.error("Array at index %d has not been set yet".format(x))))
         val idx = ensureNum(evalExpr(heap, regs, i)) + 1
+        if(protect.contains(idx)) {
+          throw new RuntimeException("Accessing protected location forbidden.")
+        }
         regs = regs.copy(programCounter = regs.programCounter + 1)
         heap = heap.store(arrayStart + idx, evalExpr(heap, regs, e))
       }
@@ -101,6 +104,7 @@ object SafeFunRuntime {
 
         // Save current registers
         for ((reg, i) <- regs.asList.zipWithIndex) {
+          protect = protect + (loc + i) // NOTE: make new registers protected
           newHeap = newHeap.store(loc + i, NumValue(reg))
         }
 
@@ -134,6 +138,9 @@ object SafeFunRuntime {
         val from = regs.framePointer - regs.count
         val to = regs.framePointer + regs.frameSize - 1
         newHeap = newHeap.free(from, to)
+
+        //NOTE: Remove Registers of old stack frame from protected
+        protect = protect -- List.range(from, from+3)
 
         heap = newHeap
         regs = oldRegs.copy(programCounter = oldRegs.programCounter + 1)

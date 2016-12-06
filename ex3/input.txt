@@ -16,7 +16,7 @@ setpassword(userid,pw,newpw) {
 
                         // 5:  JumpIfInstr(1,Lit(Bool(true))),
      }
-                        // 6:  ReturnInstr(Var(1)),
+                        // 6:  ReReturnInstrturnInstr(Var(1)),
 
 }
 
