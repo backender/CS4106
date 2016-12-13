@@ -2,18 +2,26 @@ package typedfun
 
 import common.Lang._
 import typedfun.FunLang._
-import scala.util.{Try, Success, Failure}
+
+import scala.util.{Failure, Success, Try}
 
 object FunTypeChecker {
 
   type Context = List[(Variable, Type)]
   type FunctionContext = List[(Variable, FunctionType)]
 
-  def typeCheckProgram(prog: Program): Try[Unit] = prog match {
-    case Program(functions, statements) => for {
+  var ctx = List() : Context
+  var fctx = List() : FunctionContext
 
-      _ <- typeCheckFunctions(List(), List(), functions)
-      _ <- typeCheckStatements(List(), List(), statements)
+  def typeCheckProgram(prog: Program): Try[Unit] = prog match {
+    case Program(functions, statements) =>
+      fctx = prog.functions.map{
+        case Function(returnType, label, args, _) =>
+          (label, FunctionType(args.map(a => a.typ), returnType)) : (Variable, FunctionType)
+      }
+      for {
+        _ <- typeCheckStatements(fctx, ctx, statements)
+        _ <- typeCheckFunctions(fctx, ctx, functions)
     } yield ()
   }
 
@@ -26,10 +34,11 @@ object FunTypeChecker {
   }
 
   def typeCheckFunction(fctx: FunctionContext, ctx: Context, fun: Function): Try[Unit] = fun match {
-    case Function(rt, label, args, body)  => for {
-      t <- typeCheckStatements(fctx, ctx, body)
-      _ <- expect(rt, t)
-    } yield ()
+    case Function(rt, label, args, body)  =>
+        args.foreach( a => extend(ctx, a.variable, a.typ))
+        val t = typeCheckStatements(fctx, ctx, body)
+        expect(rt, t)
+        Success()
   }
 
   def typeCheckStatements(fctx: FunctionContext, ctx: Context, statements: List[Statement]): Try[Type] = statements match {
@@ -66,10 +75,11 @@ object FunTypeChecker {
     case CallStmt(identifier, name, args) :: ss => for {
       ft <- lookupInFunctionContext(fctx, name)
       argsT <- typeCheckExpressions(ctx, args)
-      //_ <- (ft.args zip argsT).map{case (a, b) => expect(a, b) } // TODO: DAMN!!!!
-      t <- lookupInContext(ctx, identifier)
-      _ <- expect(t, ft.ret)
-      rt <- typeCheckStatements(fctx, extend(ctx, identifier, t), ss)
+      _ = (ft.args zip argsT).map{case (a, b) => expect(a, b) }
+      //TODO Question: we presume that identifier was not declared previously, e.g. direct assignment, correct?
+      //t <- lookupInContext(ctx, identifier)
+      //_ <- expect(t, ft.ret)
+      rt <- typeCheckStatements(fctx, extend(ctx, identifier, ft.ret), ss)
     } yield rt
 
     case ReadArrayStmt(identifier, array, index) :: ss => for {
@@ -81,7 +91,7 @@ object FunTypeChecker {
 
     case ReturnStmt(value) :: ss => for {
       rt <- typeCheckExpression(ctx, value)
-      // TODO question: is it neccessary to further check the remaining statements? if yes, how?
+      ss = VoidType()
     } yield rt
 
     case List() => Success(VoidType())
@@ -105,19 +115,39 @@ object FunTypeChecker {
       if t1 == t2
     } yield BooleanType()
     //case ArrayLength
-    //case Lit
-    //case Neg
-    //case Add
-    //case Sub
-    //case Mul
-    //case Div
+    case Lit(literal) => Success(NumberType())
+    case Neg(expression) => for {
+      t <- typeCheckExpression(ctx, expression)
+      _ <- expect(NumberType(), t)
+    } yield NumberType()
+    case Add(left, right) => typeCheckArithmetic(ctx, left, right)
+    case Sub(left, right) => typeCheckArithmetic(ctx, left, right)
+    case Mul(left, right) => typeCheckArithmetic(ctx, left, right)
+    case Div(left, right) => typeCheckArithmetic(ctx, left, right)
     //case Exp
-    //case Not
-    //case And
-    //case Or
-    //case Lt
-    //case Gt
+    case Not(e) => for {
+      t <- typeCheckExpression(ctx, e)
+      _ <- expect(BooleanType(), t)
+    } yield BooleanType()
+    case And(left, right) => typeCheckBoolean(ctx, left, right)
+    case Or(left, right) => typeCheckBoolean(ctx, left, right)
+    case Lt(left, right) => typeCheckBoolean(ctx, left, right)
+    case Gt(left, right) => typeCheckBoolean(ctx, left, right)
   }
+
+  def typeCheckArithmetic(ctx: Context, left: Expression[Variable], right: Expression[Variable]) = for {
+    l <- typeCheckExpression(ctx, left)
+    r <- typeCheckExpression(ctx, right)
+    _ <- expect(NumberType(), l)
+    _ <- expect(NumberType(), r)
+  } yield NumberType()
+
+  def typeCheckBoolean(ctx: Context, left: Expression[Variable], right: Expression[Variable]) = for {
+    l <- typeCheckExpression(ctx, left)
+    r <- typeCheckExpression(ctx, right)
+    _ <- expect(BooleanType(), l)
+    _ <- expect(BooleanType(), r)
+  } yield BooleanType()
 
   case class TypeError(msg: String) extends Exception(msg)
 
