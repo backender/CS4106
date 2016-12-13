@@ -61,37 +61,38 @@ object FunTypeChecker {
     case IfStmt(expression, ifBranch, elseBranch) :: ss => for {
       _ <- ensureBool(ctx, expression)
       _ <- typeCheckExpression(ctx, expression)
-      rt <- typeCheckStatements(fctx, ctx, ifBranch ++ elseBranch ++ ss)
+      _ <- typeCheckStatements(fctx, ctx, ifBranch)
+      _ <- typeCheckStatements(fctx, ctx, elseBranch)
+      rt <- typeCheckStatements(fctx, ctx, ss)
     } yield rt
 
     case AssignArrayStmt(identifier, index, value) :: ss => for {
-      _ <- lookupInContext(ctx, identifier)
-      t <- ensureArray(ctx, identifier)
+      _ <- ensureNum(ctx, index)
       te <- typeCheckExpression(ctx, value)
-      _ <- expect(t, ArrayType(te))
-      rt <- typeCheckStatements(fctx, ctx, ss)
+      rt <- typeCheckStatements(fctx, extend(ctx, identifier, te), ss)
+    } yield rt
+
+    case ReadArrayStmt(identifier, array, index) :: ss => for {
+      _ <- ensureNum(ctx, index)
+      at <- lookupInContext(ctx, array)
+      t <- lookupInContext(ctx, array).map {
+        case ArrayType(x) => x
+      }
+      _ <- expect(ArrayType(t), at)
+      rt <- typeCheckStatements(fctx, extend(ctx, identifier, t), ss)
     } yield rt
 
     case CallStmt(identifier, name, args) :: ss => for {
       ft <- lookupInFunctionContext(fctx, name)
       argsT <- typeCheckExpressions(ctx, args)
-      _ = (ft.args zip argsT).map{case (a, b) => expect(a, b) }
-      //TODO Question: we presume that identifier was not declared previously, e.g. direct assignment, correct?
-      //t <- lookupInContext(ctx, identifier)
-      //_ <- expect(t, ft.ret)
+      if argsT == ft.args
       rt <- typeCheckStatements(fctx, extend(ctx, identifier, ft.ret), ss)
-    } yield rt
-
-    case ReadArrayStmt(identifier, array, index) :: ss => for {
-      it <- lookupInContext(ctx, identifier)
-      at <- lookupInContext(ctx, array)
-      _ <- expect(ArrayType(it), at)
-      rt <- typeCheckStatements(fctx, extend(ctx, identifier, it), ss)
     } yield rt
 
     case ReturnStmt(value) :: ss => for {
       rt <- typeCheckExpression(ctx, value)
-      ss = VoidType()
+      _ <- expect(fctx.last._2.ret, rt) //TODO question: how do I retrieve the function name to look up the corresponding type?
+      ss = List()
     } yield rt
 
     case List() => Success(VoidType())
@@ -109,13 +110,14 @@ object FunTypeChecker {
 
     case Var(x) => lookupInContext(ctx,x)
 
-    case Eq(e1,e2) => for {
-      t1 <- typeCheckExpression(ctx, e1)
-      t2 <- typeCheckExpression(ctx, e2)
-      if t1 == t2
-    } yield BooleanType()
-    //case ArrayLength
-    case Lit(literal) => Success(NumberType())
+    case ArrayLength(identifier) => for {
+      _ <- lookupInContext(ctx, identifier)
+      _ <- ensureArray(ctx, identifier)
+    } yield NumberType()
+    case Lit(literal) => literal match {
+      case Num(l) => Success(NumberType())
+      case Bool(l) => Success(BooleanType())
+    }
     case Neg(expression) => for {
       t <- typeCheckExpression(ctx, expression)
       _ <- expect(NumberType(), t)
@@ -124,7 +126,11 @@ object FunTypeChecker {
     case Sub(left, right) => typeCheckArithmetic(ctx, left, right)
     case Mul(left, right) => typeCheckArithmetic(ctx, left, right)
     case Div(left, right) => typeCheckArithmetic(ctx, left, right)
-    //case Exp
+    case Eq(e1,e2) => for {
+      t1 <- typeCheckExpression(ctx, e1)
+      t2 <- typeCheckExpression(ctx, e2)
+      if t1 == t2
+    } yield BooleanType()
     case Not(e) => for {
       t <- typeCheckExpression(ctx, e)
       _ <- expect(BooleanType(), t)
