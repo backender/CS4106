@@ -1,6 +1,6 @@
 package dataflow
 
-import array.ArrayLang._
+import array.ArrayLang.{AssignStmt, _}
 import common.Lang._
 import dataflow.ControlFlowGraph._
 import org.scalatest._
@@ -27,7 +27,7 @@ class DataflowTest extends FlatSpec with Matchers {
           1 -> List(0)))
   }
 
-  "Instructions with simple if condition" should "produce a CFG" in {
+  "Instructions with if condition" should "produce a CFG" in {
     val prog =
       List(
         IfStmt(
@@ -54,8 +54,60 @@ class DataflowTest extends FlatSpec with Matchers {
           2 -> List(0),
           1 -> List(0)))
   }
-/*
-  "Binary search" should "the correct CFG" in {
+
+  "Instructions with while loop" should "produce a CFG" in {
+    val prog =
+      List(
+        WhileStmt(
+          Lit(Bool(true)),
+          List(
+            AssignStmt("y", Lit(Num(2)))
+          )
+        ),
+        AssignStmt("z", Lit(Num(3)))
+      )
+
+    controlFlowGraph(prog) shouldBe
+      CFG(
+        prog,
+        Map(
+          0 -> List(1, 2),
+          1 -> List(0)
+        ),
+        Map(
+          2 -> List(0),
+          1 -> List(0),
+          0 -> List(1)
+        )
+      )
+  }
+
+  "Instructions with while loop only" should "produce a CFG" in {
+    val prog =
+      List(
+        WhileStmt(
+          Lit(Bool(true)),
+          List(
+            AssignStmt("y", Lit(Num(2)))
+          )
+        )
+      )
+
+    controlFlowGraph(prog) shouldBe
+      CFG(
+        prog,
+        Map(
+          0 -> List(1),
+          1 -> List(0)
+        ),
+        Map(
+          1 -> List(0),
+          0 -> List(1)
+        )
+      )
+  }
+
+  /*"Binary search" should "the correct CFG" in {
     val prog = List(
       ArrayInitStmt("arr", List(Lit(Num(1)),Lit(Num(2)),Lit(Num(3)),Lit(Num(4)),Lit(Num(5)))),
       AssignStmt("search", Lit(Num(4))),

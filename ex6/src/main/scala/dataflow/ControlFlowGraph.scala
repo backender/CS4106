@@ -43,6 +43,31 @@ object ControlFlowGraph {
     } else {
 
       statements.head match {
+        case WhileStmt(e,body) =>
+          println("WHILE-Statement")
+          val whileCFG = controlFlowGraph(
+            body,
+            CFG(body, cfg.successors, cfg.predecessors),
+            line + 1)._1
+
+          if(statements.tail.isEmpty) {
+            val cfgPrime = CFG(
+              statements,
+              Map(line -> List(line + 1), line+body.length -> List(line)) |+| whileCFG.successors,
+              Map(line + 1 -> List(line), line -> List(line + body.length)) |+| whileCFG.predecessors
+            )
+            println(line + ": " + cfgPrime)
+            (cfgPrime, line)
+          } else {
+            val cfgPrime = CFG(
+              statements,
+              Map(line -> List(line + 1, line + 1 + body.length), line+body.length -> List(line)) |+| whileCFG.successors,
+              Map(line + 1 + body.length -> List(line), line + 1 -> List(line), line -> List(line + body.length)) |+| whileCFG.predecessors
+            )
+            println(line + ": " + cfgPrime)
+            (cfgPrime, line)
+          }
+
         case IfStmt(e, ifBranch, elseBranch) =>
           println("IF-Statement")
           val ifCFG = controlFlowGraph(
@@ -66,7 +91,6 @@ object ControlFlowGraph {
 
         case stmt =>
           println("Statement")
-
           if(statements.tail.isEmpty) {
             val cfgPrime = CFG(statements, cfg.successors, cfg.predecessors)
             println(line + ": " + cfgPrime)
@@ -90,33 +114,6 @@ object ControlFlowGraph {
 
     }
 
-     /* var cfgPrime = cfg
-      println("add succ: " + (line -> List(line+1)))
-      println("add pred: " + (line+1 -> List(line)))
-
-
-      val next = statements(line) match {
-        case IfStmt(e,ifBranch,elseBranch) =>
-          CFG(
-            cfgPrime.nodes,
-            cfgPrime.successors + (line -> List(line+1, line+1+ifBranch.length)),
-            cfgPrime.predecessors + (line+1+ifBranch.length -> List(line), line+1 -> List(line))
-          )
-        case stmt =>
-          CFG(
-          cfgPrime.nodes,
-          cfgPrime.successors + (line -> List(line+1)),
-          cfgPrime.predecessors + (line+1 -> List(line))
-          )
-      }
-
-      println(line + ": " + next)
-
-      controlFlowGraph(
-        statements,
-        next,
-        line+1
-      )*/
 
   }
 }
