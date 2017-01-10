@@ -80,18 +80,17 @@ object ControlFlowGraph {
           val startElse = endIf + 1
           val endElse = endIf + flatten(elseBranch).length
           val nextStatement = endElse + 1
+          val ifCFG = controlFlowGraph(
+            ifBranch,
+            CFG(ifBranch, cfg.successors, cfg.predecessors),
+            line + 1)._1
+
+          val elseCFG = controlFlowGraph(
+            elseBranch,
+            CFG(elseBranch, cfg.successors, cfg.predecessors),
+            line + 1 + flatten(ifBranch).length)._1
 
           if (statements.tail.isEmpty) {
-            val ifCFG = controlFlowGraph(
-              ifBranch,
-              CFG(ifBranch, cfg.successors, cfg.predecessors),
-              line + 1)._1
-
-            val elseCFG = controlFlowGraph(
-              elseBranch,
-              CFG(elseBranch, cfg.successors, cfg.predecessors),
-              line + 1 + ifBranch.length)._1
-
             val cfgPrime = CFG(
               statements,
               Map(line -> List(startIf, startElse)) |+| ifCFG.successors |+| elseCFG.successors,
@@ -102,16 +101,6 @@ object ControlFlowGraph {
             (cfgPrime, line)
 
           } else {
-            val ifCFG = controlFlowGraph(
-              ifBranch,
-              CFG(ifBranch, cfg.successors, cfg.predecessors),
-              line + 1)._1
-
-            val elseCFG = controlFlowGraph(
-              elseBranch,
-              CFG(elseBranch, cfg.successors, cfg.predecessors),
-              line + 1 + flatten(ifBranch).length)._1
-
             val cfgPrime = CFG(
               statements,
               Map(line -> List(startIf, startElse), endIf -> List(nextStatement), endElse -> List(nextStatement)) |+| ifCFG.successors |+| elseCFG.successors,
@@ -136,8 +125,8 @@ object ControlFlowGraph {
             val cfgPrime =
               CFG(
                 statements,
-                next.successors + (line -> List(line + 1)),
-                next.predecessors + (line + 1 -> List(line))
+                Map(line -> List(line + 1)) |+| next.successors,
+                Map(line + 1 -> List(line)) |+| next.predecessors
               )
             println(line + ": " + cfgPrime)
             (cfgPrime, line)
