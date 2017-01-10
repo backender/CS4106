@@ -50,19 +50,23 @@ object ControlFlowGraph {
             CFG(body, cfg.successors, cfg.predecessors),
             line + 1)._1
 
+          val startBody = line + 1
+          val endBody = line + flatten(body).length
+          val nextStatement = endBody + 1
+
           if(statements.tail.isEmpty) {
             val cfgPrime = CFG(
               statements,
-              Map(line -> List(line + 1), line+body.length -> List(line)) |+| whileCFG.successors,
-              Map(line + 1 -> List(line), line -> List(line + body.length)) |+| whileCFG.predecessors
+              Map(line -> List(startBody), endBody -> List(line)) |+| whileCFG.successors,
+              Map(startBody -> List(line), line -> List(endBody)) |+| whileCFG.predecessors
             )
             println(line + ": " + cfgPrime)
             (cfgPrime, line)
           } else {
             val cfgPrime = CFG(
               statements,
-              Map(line -> List(line + 1, line + 1 + body.length), line+body.length -> List(line)) |+| whileCFG.successors,
-              Map(line + 1 + body.length -> List(line), line + 1 -> List(line), line -> List(line + body.length)) |+| whileCFG.predecessors
+              Map(line -> List(startBody, nextStatement), endBody -> List(line)) |+| whileCFG.successors,
+              Map(nextStatement -> List(line), startBody -> List(line), line -> List(endBody)) |+| whileCFG.predecessors
             )
             println(line + ": " + cfgPrime)
             (cfgPrime, line)
@@ -70,24 +74,53 @@ object ControlFlowGraph {
 
         case IfStmt(e, ifBranch, elseBranch) =>
           println("IF-Statement")
-          val ifCFG = controlFlowGraph(
-            ifBranch,
-            CFG(ifBranch, cfg.successors, cfg.predecessors),
-            line + 1)._1
 
-          val elseCFG = controlFlowGraph(
-            elseBranch,
-            CFG(elseBranch, cfg.successors, cfg.predecessors),
-            line + 1 + ifBranch.length)._1
+          val startIf = line + 1
+          val endIf = line + flatten(ifBranch).length
+          val startElse = endIf + 1
+          val endElse = endIf + flatten(elseBranch).length
+          val nextStatement = endElse + 1
 
-          val cfgPrime = CFG(
-            statements,
-            Map(line -> List(line + 1, line + 1 + ifBranch.length)) |+| ifCFG.successors |+| elseCFG.successors,
-            Map(line + 1 + ifBranch.length -> List(line), line + 1 -> List(line)) |+| ifCFG.predecessors |+| elseCFG.predecessors
-          )
+          if (statements.tail.isEmpty) {
+            val ifCFG = controlFlowGraph(
+              ifBranch,
+              CFG(ifBranch, cfg.successors, cfg.predecessors),
+              line + 1)._1
 
-          println(line + ": " + cfgPrime)
-          (cfgPrime, line)
+            val elseCFG = controlFlowGraph(
+              elseBranch,
+              CFG(elseBranch, cfg.successors, cfg.predecessors),
+              line + 1 + ifBranch.length)._1
+
+            val cfgPrime = CFG(
+              statements,
+              Map(line -> List(startIf, startElse)) |+| ifCFG.successors |+| elseCFG.successors,
+              Map(startIf -> List(line), startElse -> List(line)) |+| ifCFG.predecessors |+| elseCFG.predecessors
+            )
+
+            println(line + ": " + cfgPrime)
+            (cfgPrime, line)
+
+          } else {
+            val ifCFG = controlFlowGraph(
+              ifBranch,
+              CFG(ifBranch, cfg.successors, cfg.predecessors),
+              line + 1)._1
+
+            val elseCFG = controlFlowGraph(
+              elseBranch,
+              CFG(elseBranch, cfg.successors, cfg.predecessors),
+              line + 1 + flatten(ifBranch).length)._1
+
+            val cfgPrime = CFG(
+              statements,
+              Map(line -> List(startIf, startElse), endIf -> List(nextStatement), endElse -> List(nextStatement)) |+| ifCFG.successors |+| elseCFG.successors,
+              Map(startIf -> List(line), startElse -> List(line), nextStatement -> List(endIf, endElse)) |+| ifCFG.predecessors |+| elseCFG.predecessors
+            )
+
+            println(line + ": " + cfgPrime)
+            (cfgPrime, line)
+          }
 
         case stmt =>
           println("Statement")

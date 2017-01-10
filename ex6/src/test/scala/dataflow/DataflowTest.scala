@@ -82,6 +82,7 @@ class DataflowTest extends FlatSpec with Matchers {
       )
   }
 
+
   "Instructions with while loop only" should "produce a CFG" in {
     val prog =
       List(
@@ -107,7 +108,9 @@ class DataflowTest extends FlatSpec with Matchers {
       )
   }
 
-  /*"Binary search" should "the correct CFG" in {
+
+
+  "Binary search" should "the correct CFG" in {
     val prog = List(
       ArrayInitStmt("arr", List(Lit(Num(1)),Lit(Num(2)),Lit(Num(3)),Lit(Num(4)),Lit(Num(5)))),
       AssignStmt("search", Lit(Num(4))),
@@ -132,7 +135,53 @@ class DataflowTest extends FlatSpec with Matchers {
         AssignStmt("middle", Div(Add(Var("first"),Var("last")),Lit(Num(2))))
       ))
     )
-//println(controlFlowGraph(prog))
-    controlFlowGraph(prog) shouldBe ???
-  }*/
+
+    val succ = Map(
+      0 -> List(1),
+      1 -> List(2),
+      2 -> List(3),
+      3 -> List(4),
+      4 -> List(5),
+      5 -> List(6),
+      //6 -> List(7, 14), // return statement is missing in code whereas it is given in lecture notes
+      6 -> List(7),
+      7 -> List(8),
+      8 -> List(9, 10),
+      9 -> List(13),
+      10 -> List(11, 12),
+      11 -> List(13),
+      12 -> List(13),
+      13 -> List(6)
+    )
+
+    val pred = Map(
+      1 -> List(0),
+      2 -> List(1),
+      3 -> List(2),
+      4 -> List(3),
+      5 -> List(4),
+      6 -> List(5, 13),
+      7 -> List(6),
+      8 -> List(7),
+      9 -> List(8),
+      10 -> List(8),
+      11 -> List(10),
+      12 -> List(10),
+      13 -> List(9, 11, 12),
+      14 -> List(6)
+    )
+
+    val cfg = controlFlowGraph(prog)
+    //controlFlowGraph(prog) shouldBe CFG(prog, succ, pred)
+
+    println("--------------------")
+    println("Succ")
+    println(cfg.successors)
+    println(succ)
+
+    println("Pred")
+    println(cfg.predecessors)
+    println(pred)
+  }
 }
+

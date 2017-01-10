@@ -28,7 +28,15 @@ Context of this exercise is the array language.
         }
     14: res := found
 
+**Solution:**
+
+![CFG](./cfg.png)
+
+
 - Task 2: In the provided code base, a control flow graph consists of a flattened list of statements, an adjacency list of predecessors and successors. Implement the function `controlFlowGraph(List[Statement], CFG, Int)` that builds up a control flow graph from a list of statements. Write two tests to validate that your implementation is correct. (2pt)
+
+**Solution:**
+See code/tests.
 
 - Task 3: Execute 3 iterations of the analysis introduced in the lecture for the program of task 1 for code blocks 6 and 14. "3 iterations" means: (2pt)
 
@@ -45,10 +53,32 @@ Context of this exercise is the array language.
     AR_entry3(N) := Join {AR_exit2(M) | M -> N}
     AR_exit3(N) := AR where (AR_entry2(N) |- N ~ AR)
 
-Has a fixed-point be reached after 3 iterations, i.e. for all s, `AR_entry4(s) = AR_entry3(s)` and `AR_exit4(s) = AR_exit3(s)`? If not, explain if a fixed-point will be reached in more iterations or why a fixed-point will never be reached for this program.
+Has a fixed-point be reached after 3 iterations, i.e. for all s, `AR_entry4(s) = AR_entry3(s)` and `AR_exit4(s) = AR_exit3(s)`?
+If not, explain if a fixed-point will be reached in more iterations or why a fixed-point will never be reached for this program.
+
+**Solution:**
+See [task3-4.ods](task3-4.ods) (Link might now work -> file is in the folder!)
+
+A fixed-point has not reached after 3 iterations.
+The problem is, that variables (first, last, found, middle) will be further updated which results in changes of their bounds.
+Since we cannot reason about the elements in the array (arread -> ?), this can go on forever.
+
 
 - Task 4: We now change the lattice of our analysis to minimal and maximal interval bounds of -5 and 5. If an arithmetic operation exceeds these limits, the interval bound is set to -∞ or ∞ respectively. Repeat the analysis of task 3, with the new lattice until a fixed-point is reached. (2pt)
 
+**Solution:**
+Again See [task3-4.ods](task3-4.ods), starting from column R. (Link might now work -> file is in the folder!)
+After two more iterations, a fixed point is reached.
+
 - Task 5: Discuss: Does the analysis always reach a fixed-point for all programs? What is the trade-off between the analyses in task 3 and 4. (1pt)
+
+**Solution:**
+A fixed point is not guaranteed to be reached by this analysis.
+As we've seen in the binary search example, a loop might update values 
+of predecessors and as a result the interval between upper and lower 
+bounds might be ever increasing.
+We then end up with an infinite chain of updates and prevents the 
+data-flow analysis from terminating in a fixpoing. 
+
 
 - Task 6: Implement the analysis of task 4 by implementing the `???` in `BoundedDataflowAnalysis.scala`. Write to tests to validate that your implementation is correct. (2pt)
