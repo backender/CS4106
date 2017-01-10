@@ -55,31 +55,37 @@ object ControlFlowGraph {
             CFG(elseBranch, cfg.successors, cfg.predecessors),
             line + 1 + ifBranch.length)._1
 
-          val that = CFG(
+          val cfgPrime = CFG(
             statements,
             Map(line -> List(line + 1, line + 1 + ifBranch.length)) |+| ifCFG.successors |+| elseCFG.successors,
             Map(line + 1 + ifBranch.length -> List(line), line + 1 -> List(line)) |+| ifCFG.predecessors |+| elseCFG.predecessors
           )
 
-          println(line + ": " + that)
-          (that, line)
+          println(line + ": " + cfgPrime)
+          (cfgPrime, line)
 
         case stmt =>
           println("Statement")
-          val next = controlFlowGraph(
-            statements.tail,
-            CFG(cfg.nodes, cfg.successors, cfg.predecessors),
-            line + 1)._1
 
-          val that =
-            CFG(
-              statements,
-              next.successors + (line -> List(line + 1)),
-              next.predecessors + (line + 1 -> List(line))
-            )
+          if(statements.tail.isEmpty) {
+            val cfgPrime = CFG(statements, cfg.successors, cfg.predecessors)
+            println(line + ": " + cfgPrime)
+            (cfgPrime, line)
+          } else {
+            val next = controlFlowGraph(
+              statements.tail,
+              CFG(cfg.nodes, cfg.successors, cfg.predecessors),
+              line + 1)._1
+            val cfgPrime =
+              CFG(
+                statements,
+                next.successors + (line -> List(line + 1)),
+                next.predecessors + (line + 1 -> List(line))
+              )
+            println(line + ": " + cfgPrime)
+            (cfgPrime, line)
+          }
 
-          println(line + ": " + that)
-          (that, line)
       }
 
     }

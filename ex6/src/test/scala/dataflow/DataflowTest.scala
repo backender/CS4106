@@ -32,17 +32,25 @@ class DataflowTest extends FlatSpec with Matchers {
       List(
         IfStmt(
           Lit(Num(1)),
-          List(AssignStmt("y", Lit(Num(2)))),
-          List(AssignStmt("z", Lit(Num(3)))))
+          List(
+            AssignStmt("y", Lit(Num(2)))
+          ),
+          List(
+            AssignStmt("z", Lit(Num(3))),
+            AssignStmt("zz", Lit(Num(3)))
+          )
+        )
       )
 
     controlFlowGraph(prog) shouldBe
       CFG(
         prog,
         Map(
-          0 -> List(1, 2)
+          0 -> List(1, 2),
+          2 -> List(3)
         ),
         Map(
+          3 -> List(2),
           2 -> List(0),
           1 -> List(0)))
   }
