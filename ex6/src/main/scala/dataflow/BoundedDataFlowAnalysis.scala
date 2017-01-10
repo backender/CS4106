@@ -22,9 +22,21 @@ object BoundedDataFlowAnalysis {
 
   type AnalysisResult = Map[Variable,Property]
 
-  def min(x:Num,y:Num) : Num = ???
+  def min(x:Num,y:Num) : Num = (x, y) match {
+    case (NumV(xx), NumV(yy)) => NumV(Math.min(xx, yy))
+    case (NegInf(), _) => NegInf()
+    case (_, NegInf()) => NegInf()
+    case (PosInf(), yy) => yy
+    case (xx, PosInf()) => xx
+  }
 
-  def max(x:Num,y:Num) : Num = ???
+  def max(x:Num,y:Num) : Num = (x, y) match {
+    case (NumV(xx), NumV(yy)) => NumV(Math.max(xx, yy))
+    case (NegInf(), yy) => yy
+    case (xx, NegInf()) => xx
+    case (PosInf(), _) => PosInf()
+    case (_, PosInf()) => PosInf()
+  }
 
   def joinInterval(iv1: Interval, iv2: Interval) : Interval =
     Interval(min(iv1.from,iv2.from),max(iv1.to,iv2.to))
